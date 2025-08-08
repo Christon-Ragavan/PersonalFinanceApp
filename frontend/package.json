@@ -1,0 +1,8 @@
+{
+  "name": "personal-finance-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "mkdir -p dist && echo '<!DOCTYPE html><html><body><h1>Hello from frontend - developing by chris</h1></body></html>' > dist/index.html"
+  }
+}
