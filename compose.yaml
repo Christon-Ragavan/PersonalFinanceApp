@@ -2,21 +2,46 @@ services:
 
   db:
     image: postgres:15
+    env_file: .env
     environment:
-      POSTGRES_USER: chris
-      POSTGRES_PASSWORD: personal
-      POSTGRES_DB: app_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_DB_PORT: ${POSTGRES_DB_PORT}
+
     volumes: [pg:/var/lib/postgresql/data]
-    ports: ["5432:5432"]
+    ports: ["${POSTGRES_DB_PORT}:${POSTGRES_DB_PORT}"]
+
+
+  metabase:
+    image: metabase/metabase:latest
+    env_file: .env
+    restart: always
+    environment:
+      MB_DB_TYPE: ${MB_DB_TYPE}
+      MB_DB_DBNAME: ${POSTGRES_DB}
+      MB_DB_PORT: ${POSTGRES_DB_PORT}
+      MB_DB_USER: ${POSTGRES_USER}
+      MB_DB_PASS: ${POSTGRES_PASSWORD}
+      MB_DB_HOST: ${MB_DB_HOST}
+      MB_PASSWORD_COMPLEXITY: strong
+      MB_PASSWORD_LENGTH: 10
+      JAVA_TIMEZONE: ${MB_JAVA_TIMEZONE}
+    ports:
+      - ${MB_PORT}:${MB_PORT}
+    depends_on:
+      - db
 
   pgadmin:
     image: dpage/pgadmin4
     restart: always
+    env_file: .env
     environment:
-      PGADMIN_DEFAULT_EMAIL: user@user.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PG_ADMIN_PORT: ${PG_ADMIN_PORT}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
     ports:
-      - "5050:80"
+      - "${PG_ADMIN_PORT}:80"
     depends_on:
       - db
 
@@ -24,17 +49,23 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+    env_file: .env
     environment:
-      DATABASE_URL: postgres://user:pass@db:5432/app_db
+      BACKEND_PORT: ${BACKEND_PORT}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_DB_PORT}/${POSTGRES_DB}
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
     entrypoint:
-      "uvicorn backend.app:app --host 0.0.0.0 --port 8000 --no-access-log --reload"
+      "uvicorn backend.app:app --host 0.0.0.0 --port ${BACKEND_PORT} --no-access-log --reload"
+
 
   frontend:
     build: ./frontend
+    env_file: .env
+    environment:
+      FRONTEND_PORT: ${FRONTEND_PORT}
     depends_on: [backend]
-    ports: ["8080:80"]
+    ports: ["${FRONTEND_PORT}:${FRONTEND_PORT}"]
 
 volumes:
   pg:
